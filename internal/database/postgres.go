@@ -1,4 +1,4 @@
-package api
+package database
 
 import (
 	"log"
@@ -27,5 +27,5 @@ func InitDB() {
 	DB = db
 
 	log.Println("Connected to Neon PostgreSQL")
-	
+
 }

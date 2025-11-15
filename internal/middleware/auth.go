@@ -1,7 +1,8 @@
-package api
+package middleware
 
 import (
 	"fmt"
+	"go_book_api/cmd/api"
 	"net/http"
 	"os"
 	"strings"
@@ -17,7 +18,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		authHeader := c.GetHeader("Authorization")
 
 		if authHeader == "" {
-			ResponseJSON(c, http.StatusUnauthorized, "Authorization token required", nil)
+			main.ResponseJSON(c, http.StatusUnauthorized, "Authorization token required", nil)
 			c.Abort()
 			return
 		}
@@ -32,7 +33,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			ResponseJSON(c, http.StatusUnauthorized, "Invalid token", nil)
+			main.ResponseJSON(c, http.StatusUnauthorized, "Invalid token", nil)
 			c.Abort()
 			return
 		}

@@ -3,14 +3,13 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"go_book_api/api"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strconv"
 	"testing"
 	"time"
-
-	"go_book_api/api"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -22,16 +21,16 @@ var jwtSecret = []byte(os.Getenv("SECRET_TOKEN"))
 
 func setupTestDB() {
 	var err error
-	api.DB, err = gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	main.DB, err = gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect test database")
 	}
-	api.DB.AutoMigrate(&api.Book{})
+	main.DB.AutoMigrate(&main.Book{})
 }
 
-func addBook() api.Book {
-	book := api.Book{Title: "Go programming", Author: "John Doe", Year: 2025}
-	api.DB.Create(&book)
+func addBook() main.Book {
+	book := main.Book{Title: "Go programming", Author: "John Doe", Year: 2025}
+	main.DB.Create(&book)
 	return book
 }
 
@@ -46,8 +45,8 @@ func generateValidToken() string {
 
 func TestGenerateJWT(t *testing.T) {
 	router := gin.Default()
-	router.POST("/token", api.GenerateJWT)
-	
+	router.POST("/token", main.GenerateJWT)
+
 	loginRequest := map[string]string{
 		"username": "admin",
 		"password": "password",
@@ -63,7 +62,7 @@ func TestGenerateJWT(t *testing.T) {
 		t.Errorf("Expected %d, got %d", http.StatusOK, status)
 	}
 
-	var response api.JsonResponse
+	var response main.JsonResponse
 	json.NewDecoder(w.Body).Decode(&response)
 
 	if response.Data == nil || response.Data.(map[string]interface{})["token"] == "" {
@@ -74,9 +73,9 @@ func TestGenerateJWT(t *testing.T) {
 func TestCreateBook(t *testing.T) {
 	setupTestDB()
 	router := gin.Default()
-	router.POST("/book", api.CreateBook)
+	router.POST("/book", main.CreateBook)
 
-	newBook := api.Book{Title: "Demo Book", Author: "Demo Author", Year: 2021}
+	newBook := main.Book{Title: "Demo Book", Author: "Demo Author", Year: 2021}
 	jsonValue, _ := json.Marshal(newBook)
 
 	req, _ := http.NewRequest("POST", "/book", bytes.NewBuffer(jsonValue))
@@ -93,7 +92,7 @@ func TestGetBooks(t *testing.T) {
 	addBook()
 
 	router := gin.Default()
-	router.GET("/books", api.GetBooks)
+	router.GET("/books", main.GetBooks)
 
 	req, _ := http.NewRequest("GET", "/books", nil)
 	w := httptest.NewRecorder()
@@ -109,7 +108,7 @@ func TestGetBook(t *testing.T) {
 	book := addBook()
 
 	router := gin.Default()
-	router.GET("/book/:id", api.GetBook)
+	router.GET("/book/:id", main.GetBook)
 
 	req, _ := http.NewRequest("GET", "/book/"+strconv.Itoa(int(book.ID)), nil)
 	w := httptest.NewRecorder()
@@ -125,9 +124,9 @@ func TestUpdateBook(t *testing.T) {
 	book := addBook()
 
 	router := gin.Default()
-	router.PUT("/book/:id", api.UpdateBook)
+	router.PUT("/book/:id", main.UpdateBook)
 
-	updateBook := api.Book{
+	updateBook := main.Book{
 		Title:  "Advanced Go Programming",
 		Author: "Demo Author",
 		Year:   2025,
@@ -151,7 +150,7 @@ func TestDeleteBook(t *testing.T) {
 	book := addBook()
 
 	router := gin.Default()
-	router.DELETE("/book/:id", api.DeleteBook)
+	router.DELETE("/book/:id", main.DeleteBook)
 
 	req, _ := http.NewRequest("DELETE",
 		"/book/"+strconv.Itoa(int(book.ID)),
@@ -164,8 +163,8 @@ func TestDeleteBook(t *testing.T) {
 		t.Errorf("Expected %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var deletedBook api.Book
-	err := api.DB.First(&deletedBook, book.ID).Error
+	var deletedBook main.Book
+	err := main.DB.First(&deletedBook, book.ID).Error
 	if err == nil {
 		t.Errorf("Expected book to be deleted, but still exists")
 	}
